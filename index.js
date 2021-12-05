@@ -1,15 +1,22 @@
-const localtunnel = require('localtunnel');
+'use strict'
+
+const fs = require('fs')
+const localtunnel = require('localtunnel')
 const TelegramBot = require('node-telegram-bot-api')
 
-const token = '<YOUR TOKEN>'
-const chatId = "YOU CHAT ID";
+let data = fs.readFileSync('config.json');
+let config = JSON.parse(data);
+
+
+const token = config.token
+const chatId = config.chatId
 
 const bot = new TelegramBot(token, { polling: true })
 
-let tunnels_list = {};
+let tunnels_list = {}
 
 async function create_tunnel(port) {
-    const tunnel = await localtunnel({ port: Number(port) });
+    const tunnel = await localtunnel({ port: Number(port) })
 
     tunnels_list[port] = tunnel.url
 
@@ -18,7 +25,7 @@ async function create_tunnel(port) {
     tunnel.on('close', () => {
         delete tunnels_list[port]
         bot.sendMessage(chatId, "Туннель на порту " + port + "закрыт.")
-    });
+    })
       
 }
 
@@ -41,16 +48,15 @@ bot.onText(/\/create (.+)/, (match) => {
 })
 
 bot.onText(/\/list/, () => {
-    let list_tunnel_string = ''
-
     if (tunnels_list !== {}) {
+        let list_tunnel_string = ''
         Object.keys(tunnels_list).forEach(tunnel => {
             list_tunnel_string += tunnel + ":" + tunnels_list[tunnel] + '\n'
         })
+        bot.sendMessage(chatId, list_tunnel_string)
     } else {
-        list_tunnel_string = "Список пуст."
+        bot.sendMessage(chatId, "Список пуст.")
     }
-	bot.sendMessage(chatId, list_tunnel_string)
 })
 
 
